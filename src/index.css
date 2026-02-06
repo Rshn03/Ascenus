@@ -99,3 +99,26 @@ body {
     animation: float-delayed 5s ease-in-out infinite;
     animation-delay: 1s;
 }
+
+/* Marquee Animation */
+@keyframes scroll {
+    0% {
+        transform: translateX(0);
+    }
+
+    100% {
+        transform: translateX(-50%);
+    }
+}
+
+.animate-scroll {
+    animation: scroll 120s linear infinite;
+}
+
+.animate-scroll-reverse {
+    animation: scroll 135s linear infinite reverse;
+}
+
+.pause-on-hover:hover {
+    animation-play-state: paused;
+}

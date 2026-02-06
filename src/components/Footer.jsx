@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useMemo } from 'react'
 import logo from '../assets/logo.png'
 
 const quickLinks = [
@@ -14,10 +15,132 @@ const legalLinks = [
     { label: 'Terms & Conditions', to: '/terms' },
 ]
 
+const watermarkText = [
+    'Ascenus', // English
+    'एसीनस',   // Hindi
+    'এসেনাস',  // Bengali
+    'అసెనస్',  // Telugu
+    'एसीनस',   // Marathi
+    'அசெனஸ்',  // Tamil
+    'آسینوس',  // Urdu
+    'એસેનસ',   // Gujarati
+    'ಅಸೆನಸ್',  // Kannada
+    'അസെനസ്',  // Malayalam
+    'ଆସେନସ୍',  // Odia
+    'ਅਸੇਨਸ',   // Punjabi
+    'এসেনাস',  // Assamese
+    'एसीनस',   // Maithili
+    'एसीनस',   // Dogri
+    'آسینوس',  // Kashmiri
+    'एसीनस',   // Konkani
+    'एसीनस',   // Nepali
+    'अस्केंउस', // Sanskrit
+    'एसीनस',   // Bodo
+    'آسینوس',  // Sindhi
+    'ꯑꯁꯦꯅꯁ',  // Manipuri (Meitei Mayek)
+    'ᱚᱥᱮᱱᱚᱥ',  // Santali (Ol Chiki)
+]
+
 export default function Footer() {
+    const scatteredItems = useMemo(() => {
+        // Organic Noise Algorithm
+        // 1. Defined Boundaries
+        const minPos = -15;
+        const maxPos = 105;
+
+        // 2. Shuffle text input
+        const shuffledText = [...watermarkText].sort(() => Math.random() - 0.5);
+
+        const placedItems = [];
+
+        return shuffledText.map((text) => {
+            let left, top;
+            let attempts = 0;
+            const maxAttempts = 15;
+            let bestCandidate = null;
+            let maxMinDist = -1;
+
+            // "Best Candidate" + Retry approach for organic spacing
+            // Try to find a spot that is at least 'minDist' away from others
+            while (attempts < maxAttempts) {
+                const candidateLeft = Math.random() * (maxPos - minPos) + minPos;
+                const candidateTop = Math.random() * (maxPos - minPos) + minPos;
+
+                // Calculate distance to nearest existing item
+                let minDist = 1000; // Start high
+
+                if (placedItems.length === 0) {
+                    minDist = 100; // First item is always fine
+                } else {
+                    for (const item of placedItems) {
+                        // Approximate distance (Euclidean) considering aspect ratio rough equivalence
+                        const dx = item.left - candidateLeft;
+                        const dy = item.top - candidateTop;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < minDist) minDist = dist;
+                    }
+                }
+
+                // Threshold to avoid overlap (roughly 15-20% distance)
+                // If we found a spot with good clearance, take it immediately
+                if (minDist > 18) {
+                    left = candidateLeft;
+                    top = candidateTop;
+                    break;
+                }
+
+                // Track the "least bad" option if we can't find a perfect one
+                if (minDist > maxMinDist) {
+                    maxMinDist = minDist;
+                    bestCandidate = { left: candidateLeft, top: candidateTop };
+                }
+
+                attempts++;
+            }
+
+            // If we couldn't find a perfect spot, use the best candidate found
+            if (left === undefined && bestCandidate) {
+                left = bestCandidate.left;
+                top = bestCandidate.top;
+            }
+
+            // Store for next iterations
+            placedItems.push({ left, top });
+
+            // Visual Randomization
+            const opacityTiers = [0.04, 0.07, 0.1];
+            const opacity = opacityTiers[Math.floor(Math.random() * opacityTiers.length)];
+            const fontSize = `${Math.random() * (3.8 - 2.2) + 2.2}rem`;
+
+            return {
+                text,
+                style: {
+                    left: `${left}%`,
+                    top: `${top}%`,
+                    transform: `translate(-50%, -50%) rotate(-28deg)`, // Fixed rotation
+                    fontSize: fontSize,
+                    opacity: opacity,
+                }
+            };
+        });
+    }, [])
+
     return (
-        <footer className="border-t border-white/10 bg-zinc-950">
-            <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+        <footer className="relative border-t border-white/10 bg-zinc-950 overflow-hidden">
+            {/* Watermark Background */}
+            <div className="absolute inset-0 z-0 h-full w-full overflow-hidden select-none pointer-events-none">
+                {scatteredItems.map((item, idx) => (
+                    <span
+                        key={idx}
+                        className="absolute font-black uppercase text-white/80 whitespace-nowrap transition-all duration-1000"
+                        style={item.style}
+                    >
+                        {item.text}
+                    </span>
+                ))}
+            </div>
+
+            <div className="relative z-10 mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
                 <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
                     {/* Brand */}
                     <div className="space-y-4">
@@ -120,7 +243,7 @@ export default function Footer() {
                                     rel="noopener noreferrer"
                                     className="transition-all hover:text-violet-400 hover-text-glow"
                                 >
-                                    584, Rabindrapally Bypass, Bolpur, Birbhum, WB 731204
+                                    Head office: 584, Rabindrapally Bypass, Bolpur, Birbhum, WB-731204
                                 </a>
                             </li>
                             <li className="flex items-center gap-2">
