@@ -38,91 +38,102 @@ const watermarkText = [
     'एसीनस',   // Bodo
     'آسینوس',  // Sindhi
     'ꯑꯁꯦꯅꯁ',  // Manipuri (Meitei Mayek)
-    'ᱚᱥᱮᱱᱚᱥ',  // Santali (Ol Chiki)
+    'ᱚᱥꯦᱱᱚᱥ',  // Santali (Ol Chiki)
 ]
 
 export default function Footer() {
     const scatteredItems = useMemo(() => {
-        // Organic Noise Algorithm
-        // 1. Defined Boundaries
-        const minPos = -15;
-        const maxPos = 105;
+        // Organic Noise Algorithm - Full Coverage
 
-        // 2. Shuffle text input
-        const shuffledText = [...watermarkText].sort(() => Math.random() - 0.5);
+        // Enhance density by simple duplication
+        const fullTextList = [...watermarkText, ...watermarkText, ...watermarkText];
+        // Shuffle
+        const shuffledText = fullTextList.sort(() => Math.random() - 0.5);
 
-        const placedItems = [];
+        const items = [];
+        const placedBoxes = []; // To track simple collision
 
-        return shuffledText.map((text) => {
-            let left, top;
+        // Helper to check collision with existing placed items
+        // simple box collision to prevent direct overlap clutter
+        const checkCollision = (x, y, isVertical) => {
+            const width = isVertical ? 4 : 12; // Rough estimate %
+            const height = isVertical ? 12 : 4; // Rough estimate %
+
+            for (const box of placedBoxes) {
+                if (x < box.x + box.w &&
+                    x + width > box.x &&
+                    y < box.y + box.h &&
+                    y + height > box.y) {
+                    return true; // Collision
+                }
+            }
+            return false;
+        };
+
+        shuffledText.forEach((text) => {
+            let left, top, rotate, isVertical;
             let attempts = 0;
-            const maxAttempts = 15;
-            let bestCandidate = null;
-            let maxMinDist = -1;
+            const maxAttempts = 30; // More attempts for better packing
 
-            // "Best Candidate" + Retry approach for organic spacing
-            // Try to find a spot that is at least 'minDist' away from others
             while (attempts < maxAttempts) {
-                const candidateLeft = Math.random() * (maxPos - minPos) + minPos;
-                const candidateTop = Math.random() * (maxPos - minPos) + minPos;
+                // Random position 0-100
+                const l = Math.random() * 95; // 0-95 to keep somewhat in bounds
+                const t = Math.random() * 90; // 0-90
 
-                // Calculate distance to nearest existing item
-                let minDist = 1000; // Start high
-
-                if (placedItems.length === 0) {
-                    minDist = 100; // First item is always fine
+                // Random orientation: Horizontal (0) or Vertical (90/-90)
+                // Reference image has mixed. Let's do 60% horizontal, 40% vertical
+                const orientationRoll = Math.random();
+                if (orientationRoll > 0.6) {
+                    rotate = Math.random() > 0.5 ? 90 : -90;
+                    isVertical = true;
                 } else {
-                    for (const item of placedItems) {
-                        // Approximate distance (Euclidean) considering aspect ratio rough equivalence
-                        const dx = item.left - candidateLeft;
-                        const dy = item.top - candidateTop;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < minDist) minDist = dist;
-                    }
+                    rotate = 0;
+                    isVertical = false;
                 }
 
-                // Threshold to avoid overlap (roughly 15-20% distance)
-                // If we found a spot with good clearance, take it immediately
-                if (minDist > 18) {
-                    left = candidateLeft;
-                    top = candidateTop;
+                // Collision check (loose) - we allow some overlap for "texture" feel, but avoid total stacking
+                // actually for a watermark texture, some overlap is fine.
+                // stricter collision might leave holes. let's be lenient.
+                if (!checkCollision(l, t, isVertical) || attempts > 20) {
+                    left = l;
+                    top = t;
                     break;
-                }
-
-                // Track the "least bad" option if we can't find a perfect one
-                if (minDist > maxMinDist) {
-                    maxMinDist = minDist;
-                    bestCandidate = { left: candidateLeft, top: candidateTop };
                 }
 
                 attempts++;
             }
 
-            // If we couldn't find a perfect spot, use the best candidate found
-            if (left === undefined && bestCandidate) {
-                left = bestCandidate.left;
-                top = bestCandidate.top;
-            }
+            if (left === undefined) return; // Skip if cant place
 
-            // Store for next iterations
-            placedItems.push({ left, top });
+            // Register box
+            placedBoxes.push({
+                x: left,
+                y: top,
+                w: isVertical ? 3 : 10,
+                h: isVertical ? 10 : 3
+            });
 
-            // Visual Randomization
-            const opacityTiers = [0.04, 0.07, 0.1];
-            const opacity = opacityTiers[Math.floor(Math.random() * opacityTiers.length)];
-            const fontSize = `${Math.random() * (3.8 - 2.2) + 2.2}rem`;
+            // Size variation - MAXIMUM
+            const sizes = ['text-7xl', 'text-8xl', 'text-9xl', 'text-[10rem]', 'text-[12rem]'];
+            const size = sizes[Math.floor(Math.random() * sizes.length)];
 
-            return {
+            // Opacity variation - INCREASED MORE
+            const opacities = [0.08, 0.1, 0.12, 0.15];
+            const opacity = opacities[Math.floor(Math.random() * opacities.length)];
+
+            items.push({
                 text,
                 style: {
                     left: `${left}%`,
                     top: `${top}%`,
-                    transform: `translate(-50%, -50%) rotate(-28deg)`, // Fixed rotation
-                    fontSize: fontSize,
+                    transform: `translate(-50%, -50%) rotate(${rotate}deg)`,
                     opacity: opacity,
-                }
-            };
+                },
+                className: `absolute font-black text-zinc-400 whitespace-nowrap select-none ${size}`
+            });
         });
+
+        return items;
     }, [])
 
     return (
